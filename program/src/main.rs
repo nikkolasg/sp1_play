@@ -18,7 +18,6 @@ use plonky2::{
 type PublicValuesTuple = sol! {
     tuple(uint32, uint32, uint32)
 };
-
 pub type H = PoseidonHash;
 type C = PoseidonGoldilocksConfig;
 const D: usize = 2;
@@ -29,13 +28,24 @@ use plonky2::field::types::Field;
 struct Node {
     identifier: F,
     value: F,
+    left_node: HashOut<F>,
+    right_node: HashOut<F>,
 }
 
 fn generate_leaves(n: usize) -> Vec<Node> {
     (0..n)
-        .map(|i| Node {
-            identifier: F::from_canonical_usize(42),
-            value: F::from_canonical_usize(i),
+        .map(|i| {
+            let v = F::from_canonical_usize(i);
+            Node {
+                identifier: F::from_canonical_usize(42),
+                value: v,
+                right_node: HashOut {
+                    elements: [v, v, v, v],
+                },
+                left_node: HashOut {
+                    elements: [v, v, v, v],
+                },
+            }
         })
         .collect()
 }
@@ -43,11 +53,12 @@ fn generate_leaves(n: usize) -> Vec<Node> {
 fn generate_tree(leaves: Vec<Node>) -> HashOut<F> {
     assert!(leaves.len() % 2 == 0);
     let mut nodes = vec![];
-    for i in 0..leaves.len() / 2 {
-        let n1 = leaves[2 * i].clone();
-        let n2 = leaves[2 * i + 1].clone();
-        let array = [n1.identifier, n2.value, n2.identifier, n2.value];
-        let out = H::hash_no_pad(&array);
+    for node in leaves {
+        let varray = [node.identifier, node.value];
+        let harray = [node.left_node.elements, node.right_node.elements].concat();
+        let mut input = varray.to_vec();
+        input.extend(harray);
+        let out = H::hash_no_pad(&input);
         nodes.push(out);
     }
     while nodes.len() > 1 {
