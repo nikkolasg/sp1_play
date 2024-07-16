@@ -149,15 +149,7 @@ pub fn main() {
     let n = sp1_zkvm::io::read::<u32>();
     let is_keccak = sp1_zkvm::io::read::<bool>();
 
-    if n > 186 {
-        panic!(
-            "This fibonacci program doesn't support n > 186, as it would overflow a 32-bit integer."
-        );
-    }
-
     // Compute the n'th fibonacci number, using normal Rust code.
-    let mut a = 0u32;
-    let mut b = 1u32;
     match is_keccak {
         true => {
             let leaves = KeccakNode::generate_leaves(n as usize);
