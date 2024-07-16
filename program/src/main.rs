@@ -16,7 +16,7 @@ use plonky2::{
 
 /// The public values encoded as a tuple that can be easily deserialized inside Solidity.
 type PublicValuesTuple = sol! {
-    tuple(uint32, uint32, uint32)
+    tuple(uint32, uint32)
 };
 pub type H = PoseidonHash;
 type C = PoseidonGoldilocksConfig;
@@ -169,8 +169,13 @@ pub fn main() {
         }
     }
 
+    let vkeccak = match is_keccak {
+        true => 1,
+        false => 0,
+    };
+
     // Encocde the public values of the program.
-    let bytes = PublicValuesTuple::abi_encode(&(n, a, b));
+    let bytes = PublicValuesTuple::abi_encode(&(n, vkeccak));
 
     // Commit to the public values of the program.
     sp1_zkvm::io::commit_slice(&bytes);

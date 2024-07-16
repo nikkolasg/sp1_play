@@ -33,7 +33,7 @@ struct ProveArgs {
 
 /// The public values encoded as a tuple that can be easily deserialized inside Solidity.
 type PublicValuesTuple = sol! {
-    tuple(uint32, uint32, uint32)
+    tuple(uint32, uint32)
 };
 
 fn main() {
@@ -65,10 +65,18 @@ fn main() {
     } else {
         // Generate the proof.
         let proof = client.prove(&pk, stdin).expect("failed to generate proof");
-        let (_, _, fib_n) =
+        let (n, is_keccak) =
             PublicValuesTuple::abi_decode(proof.public_values.as_slice(), false).unwrap();
         println!("Successfully generated proof!");
-        println!("fib(n): {}", fib_n);
+        println!("params n: {}", n);
+        println!(
+            "params is_keccak: {}",
+            match is_keccak {
+                1 => "keccak = true",
+                0 => "poseidon=true",
+                _ => panic!("should not happen"),
+            }
+        );
 
         // Verify the proof.
         client.verify(&proof, &vk).expect("failed to verify proof");
@@ -91,8 +99,9 @@ struct SP1FibonacciProofFixture {
 fn create_plonk_fixture(proof: &SP1PlonkBn254Proof, vk: &SP1VerifyingKey) {
     // Deserialize the public values.
     let bytes = proof.public_values.as_slice();
-    let (n, a, b) = PublicValuesTuple::abi_decode(bytes, false).unwrap();
+    let (n, a) = PublicValuesTuple::abi_decode(bytes, false).unwrap();
 
+    let b = a;
     // Create the testing fixture so we can test things end-ot-end.
     let fixture = SP1FibonacciProofFixture {
         a,
