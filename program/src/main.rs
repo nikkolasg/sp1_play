@@ -44,8 +44,8 @@ fn generate_tree(leaves: Vec<Node>) -> HashOut<F> {
     assert!(leaves.len() % 2 == 0);
     let mut nodes = vec![];
     for i in 0..leaves.len() / 2 {
-        let n1 = leaves[2 * i].clone();
-        let n2 = leaves[2 * i + 1].clone();
+        let n1 = leaves[i].clone();
+        let n2 = leaves[i + 1].clone();
         let array = [n1.identifier, n2.value, n2.identifier, n2.value];
         let out = H::hash_no_pad(&array);
         nodes.push(out);
