@@ -78,6 +78,16 @@ fn generate_tree(leaves: Vec<Node>) -> HashOut<F> {
     }
     *nodes.first().unwrap()
 }
+use tiny_keccak::{Hasher as KHasher, Keccak};
+
+fn generate_keccak_tree(nodes: Vec<Node>) -> Vec<u8> {
+    let mut k = Keccak::v256();
+    let mut output = [0; 32];
+    k.update(b"This is not ok");
+    k.finalize(&mut output);
+    output.to_vec()
+}
+
 pub fn main() {
     // Read an input to the program.
     //
@@ -95,7 +105,8 @@ pub fn main() {
     let mut a = 0u32;
     let mut b = 1u32;
     let leaves = generate_leaves(n as usize);
-    let tree = generate_tree(leaves);
+    //let tree = generate_tree(leaves);
+    let tree = generate_keccak_tree(leaves);
 
     // Encocde the public values of the program.
     let bytes = PublicValuesTuple::abi_encode(&(n, a, b));

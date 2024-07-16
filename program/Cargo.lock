@@ -34,7 +34,7 @@ dependencies = [
  "rand",
  "ruint",
  "serde",
- "tiny-keccak",
+ "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -76,7 +76,7 @@ dependencies = [
  "quote",
  "syn 2.0.68",
  "syn-solidity",
- "tiny-keccak",
+ "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -394,7 +394,7 @@ checksum = "f9d839f2a20b0aee515dc581a6172f2321f96cab76c1a38a4c584a194955390e"
 dependencies = [
  "getrandom",
  "once_cell",
- "tiny-keccak",
+ "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -617,6 +617,7 @@ dependencies = [
  "alloy-sol-types",
  "plonky2",
  "sp1-zkvm",
+ "tiny-keccak 2.0.2 (git+https://github.com/sp1-patches/tiny-keccak?branch=patch-v2.0.2)",
 ]
 
 [[package]]
@@ -819,7 +820,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce2bd4c29270e724d3eaadf7bdc8700af4221fc0ed771b855eadcd1b98d52851"
 dependencies = [
  "primitive-types 0.10.1",
- "tiny-keccak",
+ "tiny-keccak 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1581,6 +1582,15 @@ version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c9d3793400a45f954c52e73d068316d76b6f4e36977e3fcebb13a2721e80237"
 dependencies = [
+ "crunchy",
+]
+
+[[package]]
+name = "tiny-keccak"
+version = "2.0.2"
+source = "git+https://github.com/sp1-patches/tiny-keccak?branch=patch-v2.0.2#bf0b28f63510a90c7b6c21ac6ff461c93ecd2331"
+dependencies = [
+ "cfg-if",
  "crunchy",
 ]
 
