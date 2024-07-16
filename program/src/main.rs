@@ -25,65 +25,118 @@ type F = <C as GenericConfig<D>>::F;
 use plonky2::field::types::Field;
 
 #[derive(Clone, Debug)]
-struct Node {
+struct PoseidonNode {
     identifier: F,
     value: F,
     left_node: HashOut<F>,
     right_node: HashOut<F>,
 }
 
-fn generate_leaves(n: usize) -> Vec<Node> {
-    (0..n)
-        .map(|i| {
-            let v = F::from_canonical_usize(i);
-            Node {
-                identifier: F::from_canonical_usize(42),
-                value: v,
-                right_node: HashOut {
-                    elements: [v, v, v, v],
-                },
-                left_node: HashOut {
-                    elements: [v, v, v, v],
-                },
+impl PoseidonNode {
+    fn generate_leaves(n: usize) -> Vec<PoseidonNode> {
+        (0..n)
+            .map(|i| {
+                let v = F::from_canonical_usize(i);
+                PoseidonNode {
+                    identifier: F::from_canonical_usize(42),
+                    value: v,
+                    right_node: HashOut {
+                        elements: [v, v, v, v],
+                    },
+                    left_node: HashOut {
+                        elements: [v, v, v, v],
+                    },
+                }
+            })
+            .collect()
+    }
+
+    fn generate_tree(leaves: Vec<PoseidonNode>) -> HashOut<F> {
+        assert!(leaves.len() % 2 == 0);
+        let mut nodes = vec![];
+        for node in leaves {
+            let varray = [node.identifier, node.value];
+            let harray = [node.left_node.elements, node.right_node.elements].concat();
+            let mut input = varray.to_vec();
+            input.extend(harray);
+            let out = H::hash_no_pad(&input);
+            nodes.push(out);
+        }
+        while nodes.len() > 1 {
+            let mut to_hash = vec![];
+            for i in (0..nodes.len()).step_by(2) {
+                if i + 1 == nodes.len() {
+                    to_hash.push(*nodes.last().unwrap());
+                } else {
+                    let h1 = nodes[i];
+                    let h2 = nodes[i + 1];
+                    let input = [h1.elements, h2.elements].concat();
+                    let out = H::hash_no_pad(&input);
+                    to_hash.push(out);
+                }
             }
-        })
-        .collect()
+            nodes = to_hash;
+        }
+        *nodes.first().unwrap()
+    }
 }
 
-fn generate_tree(leaves: Vec<Node>) -> HashOut<F> {
-    assert!(leaves.len() % 2 == 0);
-    let mut nodes = vec![];
-    for node in leaves {
-        let varray = [node.identifier, node.value];
-        let harray = [node.left_node.elements, node.right_node.elements].concat();
-        let mut input = varray.to_vec();
-        input.extend(harray);
-        let out = H::hash_no_pad(&input);
-        nodes.push(out);
+type Value = [u8; 32];
+
+struct KeccakNode {
+    identifier: Value,
+    value: Value,
+    left_hash: Value,
+    right_hash: Value,
+}
+
+impl KeccakNode {
+    fn generate_leaves(n: usize) -> Vec<KeccakNode> {
+        (0..n)
+            .map(|i| {
+                let v = [i as u8; 32];
+                KeccakNode {
+                    identifier: [42 as u8; 32],
+                    value: v,
+                    left_hash: v,
+                    right_hash: v,
+                }
+            })
+            .collect()
     }
-    while nodes.len() > 1 {
-        let mut to_hash = vec![];
-        for i in (0..nodes.len()).step_by(2) {
-            if i + 1 == nodes.len() {
-                to_hash.push(*nodes.last().unwrap());
-            } else {
-                let h1 = nodes[i];
-                let h2 = nodes[i + 1];
-                let input = [h1.elements, h2.elements].concat();
-                let out = H::hash_no_pad(&input);
-                to_hash.push(out);
-            }
+
+    fn generate_tree(leaves: Vec<KeccakNode>) -> Vec<u8> {
+        assert!(leaves.len() % 2 == 0);
+        let mut nodes = vec![];
+        for node in leaves {
+            let input = [node.identifier, node.value, node.left_hash, node.right_hash].concat();
+            let out = keccak256(&input);
+            nodes.push(out);
         }
-        nodes = to_hash;
+        while nodes.len() > 1 {
+            let mut to_hash = vec![];
+            for i in (0..nodes.len()).step_by(2) {
+                if i + 1 == nodes.len() {
+                    to_hash.push(nodes.last().unwrap().clone());
+                } else {
+                    let h1 = nodes[i].clone();
+                    let h2 = nodes[i + 1].clone();
+                    let input = [h1, h2].concat();
+                    let out = keccak256(&input);
+                    to_hash.push(out);
+                }
+            }
+            nodes = to_hash;
+        }
+        nodes.first().unwrap().clone()
     }
-    *nodes.first().unwrap()
 }
 use tiny_keccak::{Hasher as KHasher, Keccak};
 
-fn generate_keccak_tree(nodes: Vec<Node>) -> Vec<u8> {
+fn keccak256(input: &[u8]) -> Vec<u8> {
     let mut k = Keccak::v256();
     let mut output = [0; 32];
-    k.update(b"This is not ok");
+    k.update(input);
     k.finalize(&mut output);
     output.to_vec()
 }
@@ -94,6 +147,7 @@ pub fn main() {
     // Behind the scenes, this compiles down to a custom system call which handles reading inputs
     // from the prover.
     let n = sp1_zkvm::io::read::<u32>();
+    let is_keccak = sp1_zkvm::io::read::<bool>();
 
     if n > 186 {
         panic!(
@@ -104,9 +158,16 @@ pub fn main() {
     // Compute the n'th fibonacci number, using normal Rust code.
     let mut a = 0u32;
     let mut b = 1u32;
-    let leaves = generate_leaves(n as usize);
-    //let tree = generate_tree(leaves);
-    let tree = generate_keccak_tree(leaves);
+    match is_keccak {
+        true => {
+            let leaves = KeccakNode::generate_leaves(n as usize);
+            let tree = KeccakNode::generate_tree(leaves);
+        }
+        false => {
+            let leaves = PoseidonNode::generate_leaves(n as usize);
+            let tree = PoseidonNode::generate_tree(leaves);
+        }
+    }
 
     // Encocde the public values of the program.
     let bytes = PublicValuesTuple::abi_encode(&(n, a, b));

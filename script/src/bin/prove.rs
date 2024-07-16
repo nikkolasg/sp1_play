@@ -24,6 +24,8 @@ pub const FIBONACCI_ELF: &[u8] = include_bytes!("../../../program/elf/riscv32im-
 struct ProveArgs {
     #[clap(long, default_value = "20")]
     n: u32,
+    #[clap(long, default_value = "false")]
+    is_keccak: bool,
 
     #[clap(long, default_value = "false")]
     evm: bool,
@@ -50,6 +52,7 @@ fn main() {
     // Setup the inputs.
     let mut stdin = SP1Stdin::new();
     stdin.write(&args.n);
+    stdin.write(&args.is_keccak);
 
     println!("n: {}", args.n);
 
