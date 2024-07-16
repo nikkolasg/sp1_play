@@ -616,7 +616,6 @@ version = "0.1.0"
 dependencies = [
  "alloy-sol-types",
  "plonky2",
- "rand",
  "sp1-zkvm",
 ]
 

@@ -23,7 +23,7 @@ pub type H = PoseidonHash;
 type C = PoseidonGoldilocksConfig;
 const D: usize = 2;
 type F = <C as GenericConfig<D>>::F;
-use plonky2::field::types::Sample;
+use plonky2::field::types::Field;
 
 #[derive(Clone, Debug)]
 struct Node {
@@ -33,9 +33,9 @@ struct Node {
 
 fn generate_leaves(n: usize) -> Vec<Node> {
     (0..n)
-        .map(|_| Node {
-            identifier: F::rand(),
-            value: F::rand(),
+        .map(|i| Node {
+            identifier: F::from_canonical_usize(42),
+            value: F::from_canonical_usize(i),
         })
         .collect()
 }
